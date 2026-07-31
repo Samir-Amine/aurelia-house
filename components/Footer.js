@@ -29,8 +29,8 @@ export default function Footer() {
           <p className="text-sm leading-relaxed">
             14 Harbor Watch Lane<br />
             Port Aurelia, ME 04101<br />
-            reservations@aureliahouse.com<br />
-            +1 (207) 555-0142
+            samyamir705@gmail.com<br />
+            +212 0767-758083
           </p>
         </div>
       </div>
