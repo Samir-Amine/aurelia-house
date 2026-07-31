@@ -60,8 +60,8 @@ export default function ContactPage() {
 
       <div className="mt-16 border-t border-charcoal/10 pt-10 font-mono text-sm text-charcoal/60 space-y-1">
         <p>14 Harbor Watch Lane, Port Aurelia, ME 04101</p>
-        <p>reservations@aureliahouse.com</p>
-        <p>+1 (207) 555-0142</p>
+        <p>samyamir705@gmail.com</p>
+        <p>+212 0767-758083</p>
       </div>
     </div>
   );
