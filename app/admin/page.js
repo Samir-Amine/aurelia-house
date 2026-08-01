@@ -227,6 +227,9 @@ function RoomsManager() {
   const [editing, setEditing] = useState(null); // room object or null
   const [form, setForm] = useState(emptyRoom);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -242,11 +245,46 @@ function RoomsManager() {
   function startEdit(room) {
     setEditing(room || "new");
     setForm(room ? { ...room } : emptyRoom);
+    setImageFile(null);
+    setImagePreview(room?.image_url || null);
+    setUploadError(null);
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files?.[0] || null;
+    setUploadError(null);
+    setImageFile(file);
+    setImagePreview(file ? URL.createObjectURL(file) : form.image_url || null);
   }
 
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
+    setUploadError(null);
+
+    let imageUrl = form.image_url;
+
+    if (imageFile) {
+      const ext = imageFile.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("room-images")
+        .upload(path, imageFile, { cacheControl: "3600", upsert: false });
+
+      if (uploadErr) {
+        setUploadError("Image upload failed: " + uploadErr.message);
+        setSaving(false);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("room-images")
+        .getPublicUrl(path);
+
+      imageUrl = publicUrlData.publicUrl;
+    }
+
     const payload = {
       room_number: form.room_number,
       room_type: form.room_type,
@@ -254,7 +292,7 @@ function RoomsManager() {
       price: Number(form.price),
       status: form.status,
       description: form.description,
-      image_url: form.image_url,
+      image_url: imageUrl,
     };
 
     const { error } =
@@ -265,6 +303,8 @@ function RoomsManager() {
     setSaving(false);
     if (!error) {
       setEditing(null);
+      setImageFile(null);
+      setImagePreview(null);
       load();
     }
   }
@@ -334,12 +374,29 @@ function RoomsManager() {
             <option value="maintenance">Maintenance</option>
             <option value="inactive">Inactive</option>
           </select>
-          <input
-            placeholder="Image URL"
-            value={form.image_url}
-            onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-            className="border border-charcoal/20 bg-linen px-4 py-3 font-body"
-          />
+          <div className="sm:col-span-2">
+            <label className="block font-mono text-[10px] uppercase tracking-widest text-charcoal/50 mb-2">
+              Room photo
+            </label>
+            <div className="flex items-center gap-4">
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Room preview"
+                  className="w-20 h-20 object-cover border border-charcoal/20"
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="border border-charcoal/20 bg-linen px-4 py-3 font-body text-sm flex-1"
+              />
+            </div>
+            {uploadError && (
+              <p className="text-red-700 text-xs mt-2">{uploadError}</p>
+            )}
+          </div>
           <textarea
             placeholder="Description"
             value={form.description}
