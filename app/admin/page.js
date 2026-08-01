@@ -132,10 +132,21 @@ function BookingsManager() {
   }, []);
 
   async function updateStatus(id, status) {
+    let reason = null;
+    if (status === "cancelled") {
+      reason = window.prompt("Reason for cancelling this booking (shown to the guest):");
+      if (reason === null) return; // admin backed out of the prompt
+    }
+
     setBusyId(id);
-    const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+    const payload = { status };
+    if (status === "cancelled") payload.cancellation_reason = reason;
+
+    const { error } = await supabase.from("bookings").update(payload).eq("id", id);
     if (!error) {
-      setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...payload } : b))
+      );
     }
     setBusyId(null);
   }
